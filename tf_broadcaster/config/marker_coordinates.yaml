@@ -1,0 +1,53 @@
+# Marker coordinates (from the marker "tibia")
+tibia_marker:
+- x: 0.02018
+  y: 0.010084
+  z: 0.004295
+- x: 0.003201
+  y: -0.0062
+  z: -0.028947
+- x: -0.020532
+  y: 0.004186
+  z: 0.006733
+- x: -0.015414
+  y: -0.034576
+  z: 0.001029
+- x: 0.012565
+  y: 0.026507
+  z: 0.016891
+
+# Reference coordinates (user-defined coordinate system)
+# These correspond directly to the marker points in the same order
+tibia_ref:
+  - x: 0.0
+    y: 0.018
+    z: -0.02
+  - x: 0.025
+    y: 0.0
+    z: 0.0
+  - x: 0.0
+    y: -0.028
+    z: -0.02
+  - x: -0.015
+    y: 0.0
+    z: 0.0
+  - x: 0.0
+    y: 0.0
+    z: 0.015
+
+femur_ref:
+  - x: 0.02
+    y: 0.0
+    z: 0.0
+  - x: -0.017
+    y: 0.0
+    z: 0.0
+  - x: 0.0
+    y: 0.018
+    z: -0.015
+  - x: 0.0
+    y: -0.020
+    z: -0.015
+  - x: 0.0
+    y: 0.0
+    z: 0.01

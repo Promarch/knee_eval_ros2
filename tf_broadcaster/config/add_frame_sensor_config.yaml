@@ -1,0 +1,7 @@
+# Marker transform configuration file
+# This file contains both marker coordinates and corresponding reference coordinates
+
+marker_transform:
+  ros__parameters:
+    marker_frame: "tibia_marker"
+    target_frame: "tibia_ref"
