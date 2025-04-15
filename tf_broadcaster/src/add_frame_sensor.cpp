@@ -10,7 +10,6 @@ AddFrameSensor::AddFrameSensor() : Node("AddFrameSensor") {
     marker_file_path_ = this->get_parameter("marker_file_path").as_string();
     marker_frame_ = this->get_parameter("marker_frame").as_string();
     target_frame_ = this->get_parameter("target_frame").as_string();
-    RCLCPP_INFO(this->get_logger(), "Marker_frame after declaring %s", marker_frame_.c_str());
 
     // Create static transform broadcaster
     static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
@@ -35,7 +34,7 @@ void AddFrameSensor::load_points_from_config(const std::string& filename,
         YAML::Node config = YAML::LoadFile(filename);
 
         // Load markers
-        YAML::Node marker_coordinates = config["tibia_marker"];
+        YAML::Node marker_coordinates = config[marker_frame_];
         if (marker_coordinates.IsSequence()) {
             for (const auto& point : marker_coordinates) {
                 double x = point["x"].as<double>();
@@ -47,7 +46,7 @@ void AddFrameSensor::load_points_from_config(const std::string& filename,
         }
 
         // Load tibia reference
-        YAML::Node reference_coordinates = config["tibia_ref"];
+        YAML::Node reference_coordinates = config[target_frame_];
         if (reference_coordinates.IsSequence()) {
             for (const auto& point : reference_coordinates) {
                 double x = point["x"].as<double>();

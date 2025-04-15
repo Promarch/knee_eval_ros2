@@ -1,38 +1,89 @@
+#%%
 import csv
 import yaml
+import numpy as np
+import os
+import pathlib
+from scipy.spatial.distance import pdist, squareform
 
-def convert_csv_to_yaml(csv_file, yaml_file):
+ref_points = {
+    "sensor": [
+        {"x":0.027, "y": 0.0, "z":0.025},
+        {"x":-0.025, "y": 0.0, "z":0.025},
+        {"x":0.0, "y": 0.0355, "z":0.0},
+        {"x":0.0, "y": -0.0255, "z":0.0},
+        {"x":0.0, "y": 0.0, "z":0.043}],
+    "femur": [ # "main"
+        {"x":0.0194, "y": 0.0, "z":0.015},
+        {"x":-0.0176, "y": 0.0, "z":0.015},
+        {"x":0.0, "y": -0.02, "z":0.0},
+        {"x":0.0, "y": 0.018, "z":0.0},
+        {"x":0.0, "y": 0.0, "z":0.0254}],
+    "tibia": [ # "V3"
+        {"x":0.0234, "y": 0.0, "z":0.020},
+        {"x":-0.0176, "y": 0.0, "z":0.020},
+        {"x":0.0, "y": -0.028, "z":0.0},
+        {"x":0.0, "y": 0.018, "z":0.0},
+        {"x":0.0, "y": 0.0, "z":0.0354}]
+}
+#%%
+
+def convert_dict_list_to_point_array(dict_list):
+    """Convert a list of dicts with x,y,z keys to a numpy array of points"""
+    return np.array([[p['x'], p['y'], p['z']] for p in dict_list])
+
+def convert_point_array_to_dict_list(point_array):
+    """Convert a numpy array of points to a list of dicts with x,y,z keys"""
+    return [{'x': float(p[0]), 'y': float(p[1]), 'z': float(p[2])} for p in point_array]
+
+def sort_points_relative(points1, points2):
+
+    # Compute pairwise distances for each list
+    distances_1 = squareform(pdist(points1))
+    distances_2 = squareform(pdist(points2))
+    # Sum the distances for each point
+    sum_distances_1 = np.sum(distances_1, axis=1)
+    sum_distances_2 = np.sum(distances_2, axis=1)
+    # Get the sorted indices based on the sum of distances
+    sorted_indices_1 = np.argsort(sum_distances_1)
+    sorted_indices_2 = np.argsort(sum_distances_2)
+    # Sort the points based on the computed indices
+    sorted_points1 = points1[sorted_indices_1]
+    sorted_points2 = points2[sorted_indices_2]
+
+    return sorted_points1, sorted_points2
+
+def convert_csv_to_yaml(csv_files, yaml_file):
+    yaml_data = {}
     # Read the CSV file
     point_data = []
-    with open(csv_file, 'r') as f:
-        csv_reader = csv.reader(f)
-        # Skip the header rows
-        for _ in range(4):  # Skip the first 4 lines
-            next(csv_reader)
-        
-        # Extract the point data
-        for row in csv_reader:
-            if row and row[0] == 'Point':
-                point_name = row[1]
-                x = float(row[2])
-                y = float(row[3])
-                z = float(row[4])
-                point_data.append({"x": x, "y": y, "z": z})
-    
-    # Create the YAML structure
-    yaml_data = {
-        "tibia_marker": point_data
-    }
-    
-    # Add reference coordinates as a placeholder
-    # You can modify these values as needed
-    yaml_data["tibia_ref"] = [
-        {"x": 0.0, "y": 0.018, "z": -0.02},
-        {"x": 0.025, "y": 0.0, "z": 0.0},
-        {"x": 0.0, "y": -0.028, "z": -0.02},
-        {"x": -0.015, "y": 0.0, "z": 0.0},
-        {"x": 0.0, "y": 0.0, "z": 0.015}
-    ]
+
+    for csv_file in csv_files:
+
+        with open(csv_file, 'r') as f:
+            csv_reader = csv.reader(f)
+            # Skip the header rows
+            for _ in range(2):  # Skip the first 4 lines
+                next(csv_reader)
+            
+            # Extract the point data
+            for row in csv_reader:
+                if row and row[0]== 'Name':
+                    point_name = row[1]
+                if row and row[0] == 'Point':
+                    x = float(row[2])
+                    y = float(row[3])
+                    z = float(row[4])
+                    point_data.append({"x": x, "y": y, "z": z})
+
+        # Find the corresponding reference marker
+        point_array = convert_dict_list_to_point_array(point_data)
+        point_data = []
+        point_name_stripped = point_name.rstrip("_body")
+        ref_point_array = convert_dict_list_to_point_array(ref_points[point_name_stripped])
+        point_array_sorted, ref_point_array_sorted = sort_points_relative(point_array, ref_point_array)
+        yaml_data[point_name] = convert_point_array_to_dict_list(point_array_sorted)
+        yaml_data[point_name_stripped+"_ref"] = convert_point_array_to_dict_list(ref_point_array_sorted)
     
     # Write to YAML file
     with open(yaml_file, 'w') as f:
@@ -40,5 +91,10 @@ def convert_csv_to_yaml(csv_file, yaml_file):
         yaml.dump(yaml_data, f, default_flow_style=False, sort_keys=False)
 
 if __name__ == "__main__":
-    convert_csv_to_yaml("config/tibia_tracker.csv", "test.yaml")
+
+    current_folder = os.path.dirname(os.path.abspath(__file__))
+    config_folder = os.path.join(current_folder, "config")
+    csv_files = [os.path.join(config_folder, file) for file in os.listdir(config_folder) if file.endswith(".csv")]
+
+    convert_csv_to_yaml(csv_files, config_folder+"/marker_coordinates.yaml")
     print("Conversion completed. YAML file created successfully.")
