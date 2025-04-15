@@ -24,3 +24,5 @@ mocap_optitrack_driver_node:
     rigid_bodies:
       1:
         name: "tibia_body"
+      2:
+        name: "femur_body"
