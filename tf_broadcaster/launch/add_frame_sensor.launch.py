@@ -16,13 +16,13 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'marker_frame', 
-            default_value='tibia_body',
+            default_value='femur_body',
             description='Name of the marker screwed on the tibia'
         ),
 
         DeclareLaunchArgument(
             'target_frame',
-            default_value='tibia_ref',
+            default_value='femur_ref',
             description='Reference values for the individual marker points'
         ),
 

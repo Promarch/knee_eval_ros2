@@ -98,9 +98,24 @@ void AddFrameSensor::publish_static_transform() {
     }
     else {
         RCLCPP_ERROR(this->get_logger(), 
-                        "Not enough points or point count missmatch: Marker points: %zu, Reference points %zu", 
+                        "Not enough points or point count mismatch: Marker points: %zu, Reference points %zu", 
                         marker_points_.size(), reference_points_.size());
     }
+}
+
+void printEigenMatrix(const Eigen::MatrixXd &matrix, const rclcpp::Logger &logger)
+{
+  for (int i = 0; i < matrix.rows(); ++i)
+  {
+    std::ostringstream row_stream;
+    for (int j = 0; j < matrix.cols(); ++j)
+    {
+      row_stream << matrix(i, j);
+      if (j < matrix.cols() - 1)
+        row_stream << ", ";
+    }
+    RCLCPP_INFO(logger, "[%s]", row_stream.str().c_str());
+  }
 }
 
 void AddFrameSensor::kabsch_algorithm(
@@ -119,32 +134,34 @@ void AddFrameSensor::kabsch_algorithm(
         return; 
     }
 
-    // Create Matrices to holf point coordinates
-    Eigen::MatrixXd P(3,n); // Marker Points
-    Eigen::MatrixXd Q(3,n); // Reference Points
+    // Create Matrices to hold point coordinates: Algorithm return transformation from Q to P
+    Eigen::MatrixXd P(n,3); // Reference Points
+    Eigen::MatrixXd Q(n,3); // Marker Points
 
     // Fill Matrices with points coordinates
     for (size_t i=0; i<n; i++) {
-        P.col(i) = marker_points[i]; 
-        Q.col(i) = reference_points[i];
+        P.row(i) = reference_points[i]; 
+        Q.row(i) = marker_points[i];
     }
 
     // Calculate centroids
-    Eigen::Vector3d centroid_P = P.rowwise().mean();
-    Eigen::Vector3d centroid_Q = Q.rowwise().mean(); 
-
-    // Center the points
-    Eigen::MatrixXd P_centered = P.colwise() - centroid_P;
-    Eigen::MatrixXd Q_centered = Q.colwise() - centroid_Q;
+    Eigen::Vector3d centroid_P = P.colwise().mean();
+    Eigen::Vector3d centroid_Q = Q.colwise().mean(); 
     
+    // Center the points
+    Eigen::MatrixXd P_centered = P.rowwise() - centroid_P.transpose();
+    Eigen::MatrixXd Q_centered = Q.rowwise() - centroid_Q.transpose();
+    printEigenMatrix(P_centered, this->get_logger());
+
     // Compute covariance matrix H
-    Eigen::Matrix3d H = P_centered * Q_centered.transpose(); 
+    Eigen::Matrix3d H = P_centered.transpose() * Q_centered; 
 
     // Compute SVD
     Eigen::JacobiSVD<Eigen::Matrix3d> svd(H, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
+    RCLCPP_INFO(this->get_logger(), "I made it until here");
     // Determine the opimal rotation
-    rotation = svd.matrixV() * svd.matrixU().transpose(); 
+    rotation = svd.matrixU() * svd.matrixV().transpose(); 
+    std::cout << "Rotation matrix \n" << rotation;
 
     // Ensure we have proper rotation matrix (det = +1)
     if (rotation.determinant() <0) {
