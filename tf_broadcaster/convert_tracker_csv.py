@@ -3,7 +3,6 @@ import csv
 import yaml
 import numpy as np
 import os
-import pathlib
 from scipy.spatial.distance import pdist, squareform
 
 ref_points = {
