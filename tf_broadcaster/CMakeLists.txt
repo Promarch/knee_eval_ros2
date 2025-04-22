@@ -14,7 +14,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 include_directories("/usr/include/eigen3")
-include_directories("/home/alex/mocap_ws/src/tf_broadcaster/include/")
+include_directories("include/")
 
 add_executable(AddFrameSensor src/add_frame_sensor.cpp)
 ament_target_dependencies(AddFrameSensor
