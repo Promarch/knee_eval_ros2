@@ -4,80 +4,119 @@
 AddFrameSensor::AddFrameSensor() : Node("AddFrameSensor") {
     // Declare and get parameters
     this->declare_parameter("marker_file_path", "");
-    this->declare_parameter("marker_frame", "");
-    this->declare_parameter("target_frame", "");
-
     marker_file_path_ = this->get_parameter("marker_file_path").as_string();
-    marker_frame_ = this->get_parameter("marker_frame").as_string();
-    target_frame_ = this->get_parameter("target_frame").as_string();
 
     // Create static transform broadcaster
     static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
 
     // Load Points from config file
-    load_points_from_config(marker_file_path_, marker_points_, reference_points_);
-
-    // log the numbers of points loaded
-    RCLCPP_INFO(this->get_logger(), "Loaded %zu marker points and %zu reference points", 
-                marker_points_.size(), reference_points_.size());
-
-    // Publish the static transform
-    publish_static_transform(); 
+    process_all_transformations(marker_file_path_);
 
     RCLCPP_INFO(this->get_logger(), "Static transform published");
 }
 
-void AddFrameSensor::load_points_from_config(const std::string& filename, 
-                                            std::vector<Eigen::Vector3d>& marker_points, 
-                                            std::vector<Eigen::Vector3d>& reference_points) {
+void AddFrameSensor::process_all_transformations(const std::string& filename) {
     try {
-        YAML::Node config = YAML::LoadFile(filename);
-
-        // Load markers
-        YAML::Node marker_coordinates = config[marker_frame_];
-        if (marker_coordinates.IsSequence()) {
-            for (const auto& point : marker_coordinates) {
-                double x = point["x"].as<double>();
-                double y = point["y"].as<double>();
-                double z = point["z"].as<double>();
-
-                marker_points.push_back(Eigen::Vector3d(x,y,z));
+        YAML::Node config = YAML::LoadFile(filename); 
+        // Find all keys that end with _body to identify markers
+        std::vector<std::string> marker_frames;
+        for (const auto& entry : config) {
+            std::string key = entry.first.as<std::string>(); 
+            if (key.length() > 5 && key.substr(key.length() - 5) == "_body") {
+                marker_frames.push_back(key); 
             }
         }
+        RCLCPP_INFO(this->get_logger(), "Found %zu marker frames to process", marker_frames.size()); 
 
-        // Load tibia reference
-        YAML::Node reference_coordinates = config[target_frame_];
-        if (reference_coordinates.IsSequence()) {
-            for (const auto& point : reference_coordinates) {
-                double x = point["x"].as<double>();
-                double y = point["y"].as<double>();
-                double z = point["z"].as<double>();
+        // Process each marker-reference pair
+        for (const auto& marker_frame : marker_frames) {
+            // Derive reference frame name by replacing _body with _ref
+            std::string target_frame = marker_frame.substr(0, marker_frame.length() - 5) + "_ref";
+            
+            // Check if both marker and reference exist in the config
+            if (config[marker_frame] && config[target_frame]) {
+                std::vector<Eigen::Vector3d> marker_points; 
+                std::vector<Eigen::Vector3d> reference_points; 
 
-                reference_points.push_back(Eigen::Vector3d(x,y,z));
+                // Load the points
+                load_points_from_config(config, marker_frame, target_frame, marker_points, reference_points);
+
+                // Publish transformation if points were loaded succesfully
+                if (!marker_points.empty() && !reference_points.empty()) {
+                    publish_static_transform(marker_frame, target_frame, marker_points, reference_points);
+                }
+                else {
+                    RCLCPP_WARN(this->get_logger(), "Marker points or reference points are empty. Marker pts: %zu, Ref pts: %zu", 
+                        marker_points.size(), reference_points.size());
+                }
+            }
+            else {
+                RCLCPP_WARN(this->get_logger(), "Missing corresponding reference frame for %s", marker_frame.c_str()); 
             }
         }
     }
-    catch (const YAML::Exception& e){
-        RCLCPP_ERROR(this->get_logger(), "Error parsing YAML config file: %s", e.what()); 
+    catch (YAML::Exception& e){
+        RCLCPP_ERROR(this->get_logger(), "Error parsing YAML file: %s", e.what()); 
     }
 }
 
-void AddFrameSensor::publish_static_transform() {
+void AddFrameSensor::load_points_from_config(const YAML::Node& config, 
+                                            const std::string& marker_frame, 
+                                            const std::string& target_frame,
+                                            std::vector<Eigen::Vector3d>& marker_points, 
+                                            std::vector<Eigen::Vector3d>& reference_points) {
+
+    // clear any existing points
+    marker_points.clear(); 
+    reference_points.clear(); 
+
+    // Load markers
+    YAML::Node marker_coordinates = config[marker_frame];
+    if (marker_coordinates.IsSequence()) {
+        for (const auto& point : marker_coordinates) {
+            double x = point["x"].as<double>();
+            double y = point["y"].as<double>();
+            double z = point["z"].as<double>();
+
+            marker_points.push_back(Eigen::Vector3d(x,y,z));
+        }
+    }
+
+    // Load reference
+    YAML::Node reference_coordinates = config[target_frame];
+    if (marker_coordinates.IsSequence()) {
+        for (const auto& point : reference_coordinates) {
+            double x = point["x"].as<double>();
+            double y = point["y"].as<double>();
+            double z = point["z"].as<double>();
+
+            reference_points.push_back(Eigen::Vector3d(x,y,z));
+        }
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Loaded %zu marker points and %zu reference points for %s to %s", 
+        marker_points.size(), reference_points.size(), marker_frame.c_str(), target_frame.c_str()); 
+}
+
+void AddFrameSensor::publish_static_transform(const std::string& marker_frame, 
+                                            const std::string& target_frame, 
+                                            const std::vector<Eigen::Vector3d>& marker_points, 
+                                            const std::vector<Eigen::Vector3d>& reference_points) {
     // Compute the transformation using Kabsch algorithm
     Eigen::Matrix3d rotation; 
     Eigen::Vector3d translation; 
     
-    if (marker_points_.size() >= 3 && reference_points_.size() >= 3 &&
-        marker_points_.size() == reference_points_.size()) {
+    if (marker_points.size() >= 3 && reference_points.size() >= 3 &&
+        marker_points.size() == reference_points.size()) {
         
         // Compute transformation matrix
-        kabsch_algorithm(marker_points_, reference_points_, rotation, translation); 
+        kabsch_algorithm(marker_points, reference_points, rotation, translation); 
 
         // Create the transform
         geometry_msgs::msg::TransformStamped transform_stamped; 
         transform_stamped.header.stamp = this->now(); 
-        transform_stamped.header.frame_id = marker_frame_; 
-        transform_stamped.child_frame_id = target_frame_;
+        transform_stamped.header.frame_id = marker_frame; 
+        transform_stamped.child_frame_id = target_frame;
         
         // Set translation
         transform_stamped.transform.translation.x = translation.x();
@@ -94,12 +133,12 @@ void AddFrameSensor::publish_static_transform() {
         // Publish static transform
         static_broadcaster_->sendTransform(transform_stamped); 
 
-        RCLCPP_INFO(this->get_logger(), "Published static transform from %s to %s", marker_frame_.c_str(), target_frame_.c_str()); 
+        RCLCPP_INFO(this->get_logger(), "Published static transform from %s to %s", marker_frame.c_str(), target_frame.c_str()); 
     }
     else {
         RCLCPP_ERROR(this->get_logger(), 
-                        "Not enough points or point count mismatch: Marker points: %zu, Reference points %zu", 
-                        marker_points_.size(), reference_points_.size());
+                        "Not enough points or point count mismatch for %s to %s: Marker points: %zu, Reference points %zu", 
+                        marker_frame.c_str(), target_frame.c_str(), marker_points.size(), reference_points.size());
     }
 }
 
@@ -135,33 +174,33 @@ void AddFrameSensor::kabsch_algorithm(
     }
 
     // Create Matrices to hold point coordinates: Algorithm return transformation from Q to P
-    Eigen::MatrixXd P(n,3); // Reference Points
     Eigen::MatrixXd Q(n,3); // Marker Points
+    Eigen::MatrixXd P(n,3); // Reference Points
 
     // Fill Matrices with points coordinates
     for (size_t i=0; i<n; i++) {
-        P.row(i) = reference_points[i]; 
-        Q.row(i) = marker_points[i];
+        Q.row(i) = reference_points[i];
+        P.row(i) = marker_points[i]; 
     }
 
     // Calculate centroids
-    Eigen::Vector3d centroid_P = P.colwise().mean();
     Eigen::Vector3d centroid_Q = Q.colwise().mean(); 
+    Eigen::Vector3d centroid_P = P.colwise().mean();
     
     // Center the points
-    Eigen::MatrixXd P_centered = P.rowwise() - centroid_P.transpose();
     Eigen::MatrixXd Q_centered = Q.rowwise() - centroid_Q.transpose();
-    printEigenMatrix(P_centered, this->get_logger());
+    Eigen::MatrixXd P_centered = P.rowwise() - centroid_P.transpose();
+    // printEigenMatrix(P_centered, this->get_logger());
 
     // Compute covariance matrix H
     Eigen::Matrix3d H = P_centered.transpose() * Q_centered; 
 
     // Compute SVD
     Eigen::JacobiSVD<Eigen::Matrix3d> svd(H, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    RCLCPP_INFO(this->get_logger(), "I made it until here");
     // Determine the opimal rotation
     rotation = svd.matrixU() * svd.matrixV().transpose(); 
-    std::cout << "Rotation matrix \n" << rotation;
+    RCLCPP_INFO(this->get_logger(), "Rotation matrix");
+    printEigenMatrix(rotation, this->get_logger());
 
     // Ensure we have proper rotation matrix (det = +1)
     if (rotation.determinant() <0) {

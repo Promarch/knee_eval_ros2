@@ -14,7 +14,14 @@ public:
     AddFrameSensor();
 
 private: 
-    void load_points_from_config(const std::string& filename, 
+
+    // Process all transformations in the YAML file
+    void process_all_transformations(const std::string& filename);
+
+    // Load points for a specific marker-reference pair
+    void load_points_from_config(const YAML::Node& config, 
+                                const std::string& marker_frame, 
+                                const std::string& target_frame, 
                                 std::vector<Eigen::Vector3d>& marker_points,
                                 std::vector<Eigen::Vector3d>& reference_points);
 
@@ -23,18 +30,15 @@ private:
                         Eigen::Matrix3d& rotation, 
                         Eigen::Vector3d& translation);
 
-    void publish_static_transform();
+    void publish_static_transform(const std::string& marker_frame, 
+                                const std::string& target_frame, 
+                                const std::vector<Eigen::Vector3d>& marker_points, 
+                                const std::vector<Eigen::Vector3d>& reference_points);
 
     // Member variables
+    std::string marker_file_path_;
     std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
 
-    std::vector<Eigen::Vector3d> marker_points_;
-    std::vector<Eigen::Vector3d> reference_points_;
-
-    std::string marker_frame_;
-    std::string target_frame_;
-
-    std::string marker_file_path_; 
 };
 
 
