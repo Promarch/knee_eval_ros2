@@ -19,7 +19,7 @@ def generate_launch_description():
         
         DeclareLaunchArgument(
             'publish_intervall',
-            default_value='10.0',
+            default_value='10',
             description='Intervall between two readings (ms)'
         ),
 
@@ -43,7 +43,7 @@ def generate_launch_description():
             parameters=[{
                 'serial_port': LaunchConfiguration('serial_port'),
                 'frame_id': LaunchConfiguration('frame_id'),
-                'publish_rate': LaunchConfiguration('publish_rate')
+                'publish_intervall': LaunchConfiguration('publish_intervall')
             }]
         )
     ])
