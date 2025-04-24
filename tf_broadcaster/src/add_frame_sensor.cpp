@@ -12,7 +12,7 @@ AddFrameSensor::AddFrameSensor() : Node("AddFrameSensor") {
     // Load Points from config file
     process_all_transformations(marker_file_path_);
 
-    RCLCPP_INFO(this->get_logger(), "Static transform published");
+    RCLCPP_INFO(this->get_logger(), "Finished publishing transforms from optitrack to tracker frames");
 }
 
 void AddFrameSensor::process_all_transformations(const std::string& filename) {
@@ -26,7 +26,7 @@ void AddFrameSensor::process_all_transformations(const std::string& filename) {
                 marker_frames.push_back(key); 
             }
         }
-        RCLCPP_INFO(this->get_logger(), "Found %zu marker frames to process", marker_frames.size()); 
+        RCLCPP_DEBUG(this->get_logger(), "Found %zu marker frames to process", marker_frames.size()); 
 
         // Process each marker-reference pair
         for (const auto& marker_frame : marker_frames) {
@@ -94,7 +94,7 @@ void AddFrameSensor::load_points_from_config(const YAML::Node& config,
         }
     }
 
-    RCLCPP_INFO(this->get_logger(), "Loaded %zu marker points and %zu reference points for %s to %s", 
+    RCLCPP_DEBUG(this->get_logger(), "Loaded %zu marker points and %zu reference points for %s to %s", 
         marker_points.size(), reference_points.size(), marker_frame.c_str(), target_frame.c_str()); 
 }
 
@@ -133,7 +133,7 @@ void AddFrameSensor::publish_static_transform(const std::string& marker_frame,
         // Publish static transform
         static_broadcaster_->sendTransform(transform_stamped); 
 
-        RCLCPP_INFO(this->get_logger(), "Published static transform from %s to %s", marker_frame.c_str(), target_frame.c_str()); 
+        RCLCPP_DEBUG(this->get_logger(), "Published static transform from %s to %s", marker_frame.c_str(), target_frame.c_str()); 
     }
     else {
         RCLCPP_ERROR(this->get_logger(), 
@@ -153,7 +153,7 @@ void printEigenMatrix(const Eigen::MatrixXd &matrix, const rclcpp::Logger &logge
       if (j < matrix.cols() - 1)
         row_stream << ", ";
     }
-    RCLCPP_INFO(logger, "[%s]", row_stream.str().c_str());
+    RCLCPP_DEBUG(logger, "[%s]", row_stream.str().c_str());
   }
 }
 
@@ -199,7 +199,7 @@ void AddFrameSensor::kabsch_algorithm(
     Eigen::JacobiSVD<Eigen::Matrix3d> svd(H, Eigen::ComputeFullU | Eigen::ComputeFullV);
     // Determine the opimal rotation
     rotation = svd.matrixU() * svd.matrixV().transpose(); 
-    RCLCPP_INFO(this->get_logger(), "Rotation matrix");
+    RCLCPP_DEBUG(this->get_logger(), "Rotation matrix");
     printEigenMatrix(rotation, this->get_logger());
 
     // Ensure we have proper rotation matrix (det = +1)

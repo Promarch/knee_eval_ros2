@@ -20,6 +20,8 @@ AddStaticTf::AddStaticTf() : Node("AddStaticTf") {
     publish_tf(SensorInTibia_RPY_, "tibia_ref", "sensor_ref");
     publish_tf(KneeInTibia_RPY_, "tibia_ref", "knee_ref");
 
+    RCLCPP_INFO(this->get_logger(), "Finished publishing static transforms to knee and sensor");
+
 }
 
 std::vector<double> AddStaticTf::parse_double_array(const std::string& str) {
