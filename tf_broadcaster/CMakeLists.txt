@@ -16,6 +16,7 @@ find_package(Eigen3 REQUIRED)
 include_directories("/usr/include/eigen3")
 include_directories("include/")
 
+# AddFrameSensor executable
 add_executable(AddFrameSensor src/add_frame_sensor.cpp)
 ament_target_dependencies(AddFrameSensor
   rclcpp
@@ -26,8 +27,18 @@ ament_target_dependencies(AddFrameSensor
   Eigen3
 )
 
+# AddStaticTf executable
+add_executable(AddStaticTf src/add_static_tf.cpp)
+ament_target_dependencies(AddStaticTf
+  rclcpp
+  tf2
+  tf2_ros
+  geometry_msgs
+)
+
 install(TARGETS
   AddFrameSensor
+  AddStaticTf
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -35,6 +46,11 @@ target_link_libraries(AddFrameSensor
   ${rclcpp_LIBRARIES}
   ${tf2_ros_LIBRARIES}
   yaml-cpp
+)
+
+target_link_libraries(AddStaticTf
+  ${rclcpp_LIBRARIES}
+  ${tf2_ros_LIBRARIES}
 )
 
 # Install the config files
