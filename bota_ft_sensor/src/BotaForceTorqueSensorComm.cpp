@@ -68,7 +68,7 @@ bool BotaForceTorqueSensorComm::checkSync()
 BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame() // {VALID_DATA, NOT_VALID_DATA, NOT_ALLIGNED_DATA, NO_DATA}
 {
   ReadFrameRes err = NO_FRAME;
-  if(serialAvailable()>=sizeof(frame))
+  if(static_cast<size_t>(serialAvailable())>=sizeof(frame))
   {
     serialReadBytes(frame.bytes, sizeof(frame));
     if(checkSync())

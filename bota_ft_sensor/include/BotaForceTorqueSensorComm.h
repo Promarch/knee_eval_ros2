@@ -6,6 +6,8 @@ class BotaForceTorqueSensorComm
 private:
   bool _synced;
   uint32_t _crc_err_count;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
   union DataStatus
   {
       struct __attribute__((__packed__))
@@ -40,6 +42,7 @@ private:
       };
       uint8_t bytes[1];
   };
+#pragma GCC diagnostic pop
 
 public:
   enum ReadFrameRes {NO_FRAME, VALID_FRAME, NOT_VALID_FRAME, NOT_ALLIGNED_FRAME};
