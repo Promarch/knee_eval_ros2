@@ -12,13 +12,37 @@ CalcForceKnee::CalcForceKnee() : Node("CalcForceKnee") {
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock()); 
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_); 
 
+    // Initialize transformed force publisher
+    force_pub_ = this->create_publisher<geometry_msgs::msg::WrenchStamped>("/wrench_knee", 10);   
+
+    // Wait for the transformation to be available
+    rclcpp::Rate rate(1); 
+    bool transform_available = false; 
+    while (rclcpp::ok() && !transform_available) {
+        try {
+            if (tf_buffer_->canTransform(target_frame_, source_frame_, tf2::TimePointZero)) {
+                transform_available = true; 
+                RCLCPP_INFO(this->get_logger(), "Transform between %s and %s is now available", 
+                    target_frame_.c_str(), source_frame_.c_str());
+            } else {
+                RCLCPP_INFO(this->get_logger(), "Waiting for transform between %s and %s...", 
+                    target_frame_.c_str(), source_frame_.c_str());
+                rate.sleep();
+            }
+        }
+        catch (const tf2::TransformException& e) {
+            RCLCPP_INFO(this->get_logger(), "Exception while waiting for transform: %s", e.what());
+            rate.sleep();
+        }
+    }
+
     // Initialize force subscriber
     force_sub_ = this->create_subscription<geometry_msgs::msg::WrenchStamped>(
         "/ft_sensor/wrench_stamped", 10, 
         std::bind(&CalcForceKnee::ForceCallback, this, std::placeholders::_1));
 
-    // Initialize transformed force publisher
-    force_pub_ = this->create_publisher<geometry_msgs::msg::WrenchStamped>("/wrench_knee", 10);    
+    RCLCPP_INFO(this->get_logger(), "Currently publishing transformed wrench");
+ 
 }
 
 void CalcForceKnee::ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg) {
@@ -26,7 +50,7 @@ void CalcForceKnee::ForceCallback(const std::shared_ptr<geometry_msgs::msg::Wren
     // Get the latest transformation
     geometry_msgs::msg::TransformStamped tf_stamped; 
     try {
-        tf_stamped = tf_buffer_->lookupTransform(target_frame_, source_frame_, tf2::TimePointZero); // the function has permanent access to member variables
+        tf_stamped = tf_buffer_->lookupTransform(target_frame_, source_frame_, tf2::TimePointZero); 
     }
     catch (const tf2::TransformException& e) {
         RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s; %s", source_frame_.c_str(), target_frame_.c_str(), e.what());
