@@ -85,6 +85,10 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/NatNetSDK/lib/libNatNet.so
+  DESTINATION lib
+)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_copyright REQUIRED)
