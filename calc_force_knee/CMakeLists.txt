@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 include_directories("include/")
 
 add_executable(CalcForceKnee src/calc_force_knee.cpp)
@@ -21,8 +22,18 @@ ament_target_dependencies(CalcForceKnee
   tf2_msgs
 )
 
+add_executable(ForceVisualizer src/visualize_force.cpp)
+ament_target_dependencies(ForceVisualizer
+  rclcpp
+  geometry_msgs
+  tf2_ros
+  tf2_msgs
+  visualization_msgs
+)
+
 INSTALL(TARGETS
   CalcForceKnee
+  ForceVisualizer
   DESTINATION lib/${PROJECT_NAME}
 )
 
