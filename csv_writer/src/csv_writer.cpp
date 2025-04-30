@@ -103,14 +103,14 @@ void CsvWriter::ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchSt
 void CsvWriter::InitializeCsv() {
 
     // Write CSV header
-    csv_file_ << "timestamp"; 
-    csv_file_ << "force_x,force_y,force_z"; 
-    csv_file_ << "torque_x, torque_y, torque_z";
-    csv_file_ << "tibia_x, tibia_y, tibia_z"; 
-    csv_file_ << "tibia_qx, tibia_qy, tibia_qz, tibia_qw";
-    csv_file_ << "femur_x, femur_y, femur_z"; 
-    csv_file_ << "femur_qx, femur_qy, femur_qz, femur_qw";
-    csv_file_ << "knee_x, knee_y, knee_z"; 
+    csv_file_ << "timestamp,"; 
+    csv_file_ << "force_x,force_y,force_z,"; 
+    csv_file_ << "torque_x, torque_y, torque_z,";
+    csv_file_ << "tibia_x, tibia_y, tibia_z,"; 
+    csv_file_ << "tibia_qx, tibia_qy, tibia_qz, tibia_qw,";
+    csv_file_ << "femur_x, femur_y, femur_z,"; 
+    csv_file_ << "femur_qx, femur_qy, femur_qz, femur_qw,";
+    csv_file_ << "knee_x, knee_y, knee_z,"; 
     csv_file_ << "knee_qx, knee_qy, knee_qz, knee_qw" << std::endl;
 
 }

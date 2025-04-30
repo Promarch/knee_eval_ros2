@@ -8,7 +8,7 @@ def generate_launch_description():
         # Declare parameters
         DeclareLaunchArgument(
             "path_csv_file", 
-            default_value = "data.config", 
+            default_value = "data.csv", 
             description = "Path to the config file"
         ),
         DeclareLaunchArgument(
