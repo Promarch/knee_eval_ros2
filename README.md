@@ -1,6 +1,6 @@
 # Packages for knee evaluation
 
-This repo contains all packages necessary to run the knee evaluation setup. It contains the following packages
+This repo contains all packages necessary to run the knee evaluation setup, with the packages explained below. For a more comprehensive description of the individual packages please go to their respective readme files. 
 
 ### mocap4ros_optitrack & mocap_msgs
 
@@ -16,7 +16,7 @@ Contains two separate notes: AddFrameSensor broadcasts the static transformation
 
 ### calc_force_knee
 
-This one contains also contains two nodes, though one is optional. The main node is called CalcForceKnee, which subscribes to the sensor data topic, applies the transformation from the sensor frame to the knee frame, and publishes the newly calculated sensor data in the knee frame. The other node is called ForceVisualizer which subscribes to the force published by CalcForceKnee and publishes an arrow marker for RViz. 
+This package also contains two nodes, though one is optional. The main node is called CalcForceKnee, which subscribes to the sensor data topic, applies the transformation from the sensor frame to the knee frame, and publishes the newly calculated sensor data in the knee frame. The other node is called ForceVisualizer which subscribes to the force published by CalcForceKnee and publishes an arrow marker for RViz. 
 
 ### csv_writer
 
@@ -25,35 +25,46 @@ As the name says, this node writes a csv file comprising the calculated force in
 ## Build
 
 Create a workspace
-```
+```bash
 mkdir -p knee_eval_ws/src && cd knee_eval_ws/src
 ```
 Copy the content of the repository in the folder
-```
+```bash
 git clone https://github.com/Promarch/knee_eval_ros2.git .
 ```
 Check for missing dependencies (in the root of your workspace) before building: 
-```
+```bash
 cd ..
 rosdep install -i --from-path src --rosdistro humble -y
 ```
 Build the packages
-```
+```bash
 colcon build --packages-select tf_broadcaster bota_ft_sensor mocap_optitrack_driver
 ```
 For ease of use, add the newly created repository to .bashrc so that you don't have to source the environment every time. Please replace "knee_eval_ws" with your chosen workspace name. 
-```
+```bash
 echo "~/knee_eval_ws/install/setup.bash" >> ~/.bashrc
 ```
+
 ## Usage
 ### General Node Setup
-All packages needed for the evaluation are launched via the main launch file. This launches the OptiTrack node with the static transformations, the force sensor with the force transformation node, as well as rviz to visualize the transformation. Rviz is not necessary for the final data stream and can be closed as soon as it is launched. Navigate into the root directory of your workspace and type: 
-```
+All packages needed for the evaluation are launched via the main launch file. This launches the OptiTrack node with the static transformations, the force sensor with the force transformation node, as well as the csv_writer node. 
+Navigate into the root directory of your workspace and type: 
+```bash
 ros2 launch pkg_launcher global_launcher.launch.py
 ```
-### CSV Writer
-The node to write the CSV file is started separately. Currently, the node starts writing the file as soon as it is launched and receives transformation, and closes the file when the node is destroyed. Trigger based writing and closing will be implemented in a later iteration. 
-```
-ros2 launch csv_writer csv_writer.launch.py
-```
+The recording of the csv file is started via a service call (see the following section). 
 
+### Service calls
+
+It is advised to zero the sensor before the recording is started. 
+```bash
+ros2 service call /ft_sensor/zero std_srvs/srv/Trigger {}
+```
+The recording of the csv file is also controlled via service calls. 
+```bash
+# Start recording
+ros2 service call /start_csv_recording std_srvs/srv/Trigger {}
+# Stop recording
+ros2 service call /stop_csv_recording std_srvs/srv/Trigger {}
+```
