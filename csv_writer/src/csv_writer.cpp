@@ -19,6 +19,14 @@ CsvWriter::CsvWriter() : Node("CsvWriter") {
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock()); 
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_); 
 
+    // Create services
+    start_recording_service_ = this->create_service<std_srvs::srv::Trigger>(
+        "start_csv_recording", 
+        std::bind(&CsvWriter::HandleStartRecording, this, std::placeholders::_1, std::placeholders::_2));
+    stop_recording_service_ = this->create_service<std_srvs::srv::Trigger>(
+        "stop_csv_recording", 
+        std::bind(&CsvWriter::HandleStopRecording, this, std::placeholders::_1, std::placeholders::_2));
+
     // Wait for the transformation to be available
     rclcpp::Rate rate(1); 
     bool transform_available = false; 
@@ -40,26 +48,77 @@ CsvWriter::CsvWriter() : Node("CsvWriter") {
         }
     }
 
-    // Open and initalize csv file
-    csv_file_.open(path_csv_file_, std::ios::out); 
-    if (csv_file_.is_open()) {
-        RCLCPP_INFO(this->get_logger(), "CSV file opened"); 
-    }
-    else {
-        RCLCPP_ERROR(this->get_logger(), "CSV file could not be opened");
-        return; 
-    }
-    InitializeCsv(); 
-
     // Initialize the wrench subscriber
     wrench_sub_ = this->create_subscription<geometry_msgs::msg::WrenchStamped>("/wrench_knee", 10, 
     std::bind(&CsvWriter::ForceCallback, this, std::placeholders::_1)); 
 
+
+    RCLCPP_INFO(this->get_logger(), "CSV Writer initialized and waiting for start_csv_recording service call");
+    RCLCPP_INFO(this->get_logger(), "To start recording, use: ros2 service call /start_csv_recording std_srvs/srv/Trigger {}");
+    RCLCPP_INFO(this->get_logger(), "Current CSV filename: %s", path_csv_file_.c_str());
+    // RCLCPP_INFO(this->get_logger(), "To change filename, use: ros2 param set /CsvWriter path_csv_file your_filename.csv");
+}
+
+void CsvWriter::HandleStartRecording(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/, 
+    const std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+
+    // If the file is already recording don't do anything
+    if (is_recording_) {
+        response->success = false; 
+        response->message = "Already recording to csv file: " + path_csv_file_; 
+        return; 
+    }
+
+    // Open CSV
+    csv_file_.open(path_csv_file_, std::ios::out); 
+    if (csv_file_.is_open()) {
+        is_recording_ = true; 
+        RCLCPP_INFO(this->get_logger(), "Started recording to CSV file: %s", path_csv_file_.c_str()); 
+        InitializeCsv(); 
+        response->success = true; 
+        response->message = "Succesfully started recording to: " + path_csv_file_; 
+    }
+    else {
+        RCLCPP_ERROR(this->get_logger(), "CSV file could not be opended: %s", path_csv_file_.c_str()); 
+        response->success = false; 
+        response->message = "Failed to open CSV file: " + path_csv_file_; 
+    }
+}
+
+void CsvWriter::HandleStopRecording(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/, 
+    const std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+
+    // Dont do anything if not recording
+    if (!is_recording_) {
+        response->success = false; 
+        response->message = "Not currently recording"; 
+        return; 
+    }
+
+    // Close CSV
+    if (csv_file_.is_open()) {
+        csv_file_.close(); 
+        is_recording_ = false; 
+        RCLCPP_INFO(this->get_logger(), "Stopped recording to csv file: %s", path_csv_file_.c_str()); 
+        response->success = true; 
+        response->message = "Succesfully stopped recording to " + path_csv_file_; 
+    }
+    else {
+        response->success = false; 
+        response->message = "CSV file was not open"; 
+    }
 }
 
 void CsvWriter::ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg) {
-    try {
 
+    // Skip if not recording
+    if (!is_recording_ || !csv_file_.is_open()) {
+        return; 
+    }
+
+    try {
         // Write header and received forces
         rclcpp::Time current_time = msg->header.stamp; 
         std::string timestamp = std::to_string(current_time.seconds()); 

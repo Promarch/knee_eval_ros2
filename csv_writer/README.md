@@ -8,7 +8,14 @@ The node is started via the launch file
 ```
 ros2 launch csv_writer csv_writer.launch.py
 ```
-The node start writing the csv file as soon as the node is launched and the first transformation is available, and stops writing when the node is destroyed. 
+When launched, the node idles until the command to start recording is sent. This is done via a service call: 
+```
+ros2 service call /start_csv_recording std_srvs/srv/Trigger {}
+```
+Stopping the recording is also triggered by a service call (or if the node is destroyed)
+```
+ros2 service call /stop_csv_recording std_srvs/srv/Trigger {}
+```
 
 ### Parameters
 

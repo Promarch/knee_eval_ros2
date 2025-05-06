@@ -12,6 +12,7 @@ def generate_launch_description():
     optitrack_dir = get_package_share_directory('mocap_optitrack_driver')
     tf_broadcaster_dir = get_package_share_directory('tf_broadcaster')
     calc_force_knee_dir = get_package_share_directory('calc_force_knee')
+    csv_writer_dir = get_package_share_directory('csv_writer')
 
     # First stage: Launch bota_ft_sensor and optitrack2
     bota_ft_sensor_launch = IncludeLaunchDescription(
@@ -39,7 +40,7 @@ def generate_launch_description():
         actions=[add_frame_sensor_launch]
     )
 
-    # Third stage: Launch calc_force_knee and optitrack_rviz after add_frame_sensor
+    # Third stage: Launch calc_force_knee and csv_writer after add_frame_sensor
     # Adding a timer to ensure all the previous nodes have time to initialize
     calc_force_knee_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -47,20 +48,20 @@ def generate_launch_description():
         )
     )
 
-    optitrack_rviz_launch = IncludeLaunchDescription(
+    csv_writer_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(optitrack_dir, 'launch', 'optitrack_rviz.launch.py')
+            os.path.join(csv_writer_dir, 'launch', 'csv_writer.launch.py')
         )
     )
 
     calc_force_timer = TimerAction(
-        period=5.0,  # 3 second delay to ensure previous nodes are ready
+        period=5.0,  # 5 second delay to ensure previous nodes are ready
         actions=[calc_force_knee_launch]
     )
 
-    rviz_timer = TimerAction(
+    csv_timer = TimerAction(
         period=5.5,  # 3.5 second delay to ensure previous nodes are ready
-        actions=[optitrack_rviz_launch]
+        actions=[csv_writer_launch]
     )
 
     # Create and return launch description
@@ -69,5 +70,5 @@ def generate_launch_description():
         optitrack_launch,
         add_frame_timer,
         calc_force_timer,
-        rviz_timer
+        csv_timer
     ])
