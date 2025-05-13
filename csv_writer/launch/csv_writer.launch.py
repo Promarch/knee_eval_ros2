@@ -13,7 +13,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "source_frame", 
-            default_value = "map",
+            default_value = "optitrack",
             description = "Base Frame in which all coordinates are displayed"
         ),
         DeclareLaunchArgument(
@@ -40,10 +40,10 @@ def generate_launch_description():
             output = "screen", 
             parameters = [{
                 "path_csv_file": LaunchConfiguration("path_csv_file"), 
-                "source_frame": LaunchConfiguration("source_frame"), 
+#                "source_frame": LaunchConfiguration("source_frame"), 
                 "tibia_frame": LaunchConfiguration("tibia_frame"), 
                 "femur_frame": LaunchConfiguration("femur_frame"), 
                 "knee_frame": LaunchConfiguration("knee_frame")
-            }]
+            }, {"source_frame":"optitrack"}]
         )
     ])
