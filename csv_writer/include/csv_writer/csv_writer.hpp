@@ -18,6 +18,7 @@ public:
 private: 
     // Declare functions
     void ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg);
+    void TimerCallback(); 
     void InitializeCsv();
     void WriteTf2Csv(const geometry_msgs::msg::TransformStamped& tf); 
 
@@ -34,6 +35,7 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr wrench_sub_; 
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_; 
+    rclcpp::TimerBase::SharedPtr timer_; 
 
     std::ofstream csv_file_; 
     bool is_recording_; 

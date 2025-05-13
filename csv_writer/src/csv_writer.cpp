@@ -4,7 +4,7 @@ CsvWriter::CsvWriter() : Node("CsvWriter") {
 
     // Declare and get parameters
     this->declare_parameter("path_csv_file", "data.csv");
-    this->declare_parameter("source_frame", "map");
+    this->declare_parameter("source_frame", "optitrack");
     this->declare_parameter("tibia_frame", "tibia_ref");
     this->declare_parameter("femur_frame", "femur_ref");
     this->declare_parameter("knee_frame", "knee_ref");
@@ -48,10 +48,14 @@ CsvWriter::CsvWriter() : Node("CsvWriter") {
         }
     }
 
-    // Initialize the wrench subscriber
+    // Timer instead of subscriber
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(10), // 100Hz = 10ms period
+        std::bind(&CsvWriter::TimerCallback, this));
+/*    // Initialize the wrench subscriber
     wrench_sub_ = this->create_subscription<geometry_msgs::msg::WrenchStamped>("/wrench_knee", 10, 
     std::bind(&CsvWriter::ForceCallback, this, std::placeholders::_1)); 
-
+*/
 
     RCLCPP_INFO(this->get_logger(), "CSV Writer initialized and waiting for start_csv_recording service call");
     RCLCPP_INFO(this->get_logger(), "To start recording, use: ros2 service call /start_csv_recording std_srvs/srv/Trigger {}");
@@ -110,6 +114,56 @@ void CsvWriter::HandleStopRecording(
         response->message = "CSV file was not open"; 
     }
 }
+
+void CsvWriter::TimerCallback() {
+    // Skip if not recording
+    if (!is_recording_ || !csv_file_.is_open()) {
+        return; 
+    }
+
+    try {
+        // Write header and zero forces (replacing the received forces)
+        rclcpp::Time current_time = this->now();
+        std::string timestamp = std::to_string(current_time.seconds()); 
+        csv_file_ << timestamp << ","; 
+        csv_file_ << "0.0,0.0,0.0,";
+        csv_file_ << "0.0,0.0,0.0,";
+
+        // Write tf from source to tibia
+        geometry_msgs::msg::TransformStamped tf_tibia; 
+        tf_tibia = tf_buffer_->lookupTransform(source_frame_, tibia_frame_, tf2::TimePointZero); 
+        RCLCPP_DEBUG(this->get_logger(), "Succesfully retrieved transform from %s to %s", 
+                                            tibia_frame_.c_str(), source_frame_.c_str()); 
+        WriteTf2Csv(tf_tibia); 
+
+        // Write tf from source to femur
+        geometry_msgs::msg::TransformStamped tf_femur; 
+        tf_femur = tf_buffer_->lookupTransform(source_frame_, femur_frame_, tf2::TimePointZero); 
+        RCLCPP_DEBUG(this->get_logger(), "Succesfully retrieved transform from %s to %s", 
+                                            femur_frame_.c_str(), source_frame_.c_str()); 
+        RCLCPP_INFO(this->get_logger(), "Femur: x=%f, y=%f, z=%f", tf_femur.transform.translation.x, tf_femur.transform.translation.y, tf_femur.transform.translation.z);
+        RCLCPP_INFO(this->get_logger(), "Source frame: %s", source_frame_.c_str());
+        WriteTf2Csv(tf_femur); 
+
+        // Write tf from source to femur
+        geometry_msgs::msg::TransformStamped tf_knee; 
+        tf_knee = tf_buffer_->lookupTransform(knee_frame_, source_frame_, tf2::TimePointZero); 
+        RCLCPP_DEBUG(this->get_logger(), "Succesfully retrieved transform from %s to %s", 
+                                            knee_frame_.c_str(), source_frame_.c_str()); 
+        WriteTf2Csv(tf_knee); 
+
+        csv_file_ << std::endl; 
+
+        // Flush the file to ensure data is writte immediately
+        csv_file_.flush(); 
+    }
+    catch (const tf2::TransformException& e) {
+        RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s; %s", source_frame_.c_str(), tibia_frame_.c_str(), e.what());
+        csv_file_ << std::endl << "transform error"; 
+        return; 
+    }
+}
+
 
 void CsvWriter::ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg) {
 
