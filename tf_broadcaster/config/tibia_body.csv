@@ -1,11 +1,11 @@
 File Type,Rigid Body Asset
 Version,1
 Name,tibia_body
-ID,12917606067338088944
-Color,146,0,168
+ID,16836895138316947952
+Color,255,163,128
 Units,m
-Point,Point 1,0.043507,0.016213,-0.008837,None
-Point,Point 2,0.005831,-0.043414,-0.024402,None
-Point,Point 3,0.000547,-0.004717,0.061724,None
-Point,Point 4,-0.011864,0.031657,-0.020849,None
-Point,Point 5,-0.038020,0.000262,-0.007636,None
+Point,Point 1,-0.011790,-0.019203,-0.012112,None
+Point,Point 2,-0.010117,0.012947,-0.010044,None
+Point,Point 3,-0.011153,0.004765,0.027688,None
+Point,Point 4,0.012788,0.012890,-0.009797,None
+Point,Point 5,0.020272,-0.011399,0.004265,None

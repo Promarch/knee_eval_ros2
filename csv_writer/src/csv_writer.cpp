@@ -141,8 +141,8 @@ void CsvWriter::TimerCallback() {
         tf_femur = tf_buffer_->lookupTransform(source_frame_, femur_frame_, tf2::TimePointZero); 
         RCLCPP_DEBUG(this->get_logger(), "Succesfully retrieved transform from %s to %s", 
                                             femur_frame_.c_str(), source_frame_.c_str()); 
-        RCLCPP_INFO(this->get_logger(), "Femur: x=%f, y=%f, z=%f", tf_femur.transform.translation.x, tf_femur.transform.translation.y, tf_femur.transform.translation.z);
-        RCLCPP_INFO(this->get_logger(), "Source frame: %s", source_frame_.c_str());
+        RCLCPP_DEBUG(this->get_logger(), "Femur: x=%f, y=%f, z=%f", tf_femur.transform.translation.x, tf_femur.transform.translation.y, tf_femur.transform.translation.z);
+        RCLCPP_DEBUG(this->get_logger(), "Source frame: %s", source_frame_.c_str());
         WriteTf2Csv(tf_femur); 
 
         // Write tf from source to femur
