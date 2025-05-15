@@ -1,0 +1,7 @@
+CsvWriter:
+  ros__parameters:
+    path_csv_file: "data.csv"
+    source_frame: optitrack
+    tibia_frame: tibia_ref
+    femur_frame: femur_ref
+    knee_frame: knee_ref

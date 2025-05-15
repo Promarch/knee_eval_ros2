@@ -1,6 +1,13 @@
 #include "csv_writer/csv_writer.hpp"
 
-CsvWriter::CsvWriter() : Node("CsvWriter") {
+CsvWriter::CsvWriter(const rclcpp::NodeOptions& options) : 
+    rclcpp_lifecycle::LifecycleNode("CsvWriter", options), is_recording_(false), transforms_available_(false) {
+
+    RCLCPP_INFO(this->get_logger(), "CSV Writer Lifecycle node has been instantiated");
+}
+
+CallbackReturn CsvWriter::on_configure(const rclcpp_lifecycle::State& state) {
+    RCLCPP_INFO(this->get_logger(), "Configuring [%s] from [%s] state...", this->get_name(), state.label().c_str());
 
     // Declare and get parameters
     this->declare_parameter("path_csv_file", "data.csv");
@@ -26,6 +33,15 @@ CsvWriter::CsvWriter() : Node("CsvWriter") {
     stop_recording_service_ = this->create_service<std_srvs::srv::Trigger>(
         "stop_csv_recording", 
         std::bind(&CsvWriter::HandleStopRecording, this, std::placeholders::_1, std::placeholders::_2));
+
+    RCLCPP_INFO(this->get_logger(), "Configuration complete. Parameters loaded");
+
+    return CallbackReturn::SUCCESS; 
+}
+
+// Transition from inactiva to active
+CallbackReturn CsvWriter::on_activate(const rclcpp_lifecycle::State& state) {
+    RCLCPP_INFO(this->get_logger(), "Activating [%s] from [%s] state...", this->get_name(), state.label().c_str());
 
     // Wait for the transformation to be available
     rclcpp::Rate rate(1); 
@@ -57,16 +73,88 @@ CsvWriter::CsvWriter() : Node("CsvWriter") {
     std::bind(&CsvWriter::ForceCallback, this, std::placeholders::_1)); 
 */
 
-    RCLCPP_INFO(this->get_logger(), "CSV Writer initialized and waiting for start_csv_recording service call");
+    RCLCPP_INFO(this->get_logger(), "CSV Writer now active and waiting for start_csv_recording service call");
     RCLCPP_INFO(this->get_logger(), "To start recording, use: ros2 service call /start_csv_recording std_srvs/srv/Trigger {}");
-    RCLCPP_INFO(this->get_logger(), "Current CSV filename: %s", path_csv_file_.c_str());
-    // RCLCPP_INFO(this->get_logger(), "To change filename, use: ros2 param set /CsvWriter path_csv_file your_filename.csv");
+
+    return CallbackReturn::SUCCESS;
+}
+
+// Transition from activate to inactive
+CallbackReturn CsvWriter::on_deactivate(const rclcpp_lifecycle::State& state) {
+    RCLCPP_INFO(this->get_logger(), "Deactivating [%s] from [%s] state...", this->get_name(), state.label().c_str());
+
+    // Stop recording if active
+    if (is_recording_ && csv_file_.is_open()) {
+        csv_file_.close();
+        is_recording_ = false;
+        RCLCPP_INFO(this->get_logger(), "Recording stopped during deactivation");
+    }
+    
+    // Cancel timer
+    timer_.reset();
+    
+    // Reset subscriber if it was created
+    // wrench_sub_.reset();
+    
+    RCLCPP_INFO(this->get_logger(), "Node deactivated");
+
+    return CallbackReturn::SUCCESS;
+}
+
+// Transition from inactive to unconfigured
+CallbackReturn CsvWriter::on_cleanup(const rclcpp_lifecycle::State& state) {
+    RCLCPP_INFO(this->get_logger(), "Cleaning up [%s] from [%s] state...", this->get_name(), state.label().c_str());
+
+    // Clean up transform listener and buffer
+    tf_listener_.reset(); 
+    tf_buffer_.reset(); 
+
+    transforms_available_ = false; 
+
+    RCLCPP_INFO(this->get_logger(), "Cleanup complete"); 
+
+    return CallbackReturn::SUCCESS; 
+}
+
+// Shut down the node
+CallbackReturn CsvWriter::on_shutdown(const rclcpp_lifecycle::State& state) {
+    RCLCPP_INFO(this->get_logger(), "Shutting down [%s] from [%s] state...", this->get_name(), state.label().c_str());
+
+    // Ensure file is closed
+    if (csv_file_.is_open()) {
+        csv_file_.close();
+        is_recording_ = false;
+        RCLCPP_INFO(this->get_logger(), "CSV file closed during shutdown");
+    }
+
+    rclcpp::shutdown();
+
+    return CallbackReturn::SUCCESS; 
+}
+
+// Called when an error occurs
+CallbackReturn CsvWriter::on_error(const rclcpp_lifecycle::State& state) {
+    RCLCPP_ERROR(this->get_logger(), "Error occured in [%s] state", state.label().c_str());
+    // Ensure file is closed
+    if (csv_file_.is_open()) {
+        csv_file_.close();
+        is_recording_ = false;
+        RCLCPP_INFO(this->get_logger(), "CSV file closed after error");
+    }
+
+    return CallbackReturn::SUCCESS; 
 }
 
 void CsvWriter::HandleStartRecording(
     const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/, 
     const std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
 
+    // Check if the node is in an active state
+    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        response->success = false; 
+        response->message = "Node is not in active state. Cannot start recording"; 
+        return; 
+    }
     // If the file is already recording don't do anything
     if (is_recording_) {
         response->success = false; 
@@ -116,6 +204,11 @@ void CsvWriter::HandleStopRecording(
 }
 
 void CsvWriter::TimerCallback() {
+
+    // Skip if node is not active
+    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        return; 
+    }
     // Skip if not recording
     if (!is_recording_ || !csv_file_.is_open()) {
         return; 
@@ -167,6 +260,10 @@ void CsvWriter::TimerCallback() {
 
 void CsvWriter::ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg) {
 
+    // Skip if node is not active
+    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        return;
+    }
     // Skip if not recording
     if (!is_recording_ || !csv_file_.is_open()) {
         return; 
@@ -245,14 +342,20 @@ CsvWriter::~CsvWriter() {
     // Close csv file when node is destroyed
     if (csv_file_.is_open()) {
         csv_file_.close(); 
-        RCLCPP_INFO(this->get_logger(), "CSV file closed"); 
+        RCLCPP_INFO(this->get_logger(), "CSV file closed in destructor"); 
     }
 }
 
 int main(int argc, char * argv[]) 
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<CsvWriter>());
+
+    rclcpp::executors::SingleThreadedExecutor executor; 
+    std::shared_ptr<CsvWriter> node = std::make_shared<CsvWriter>(); 
+
+    executor.add_node(node->get_node_base_interface()); 
+    executor.spin(); 
+
     rclcpp::shutdown(); 
     
     return 0;
