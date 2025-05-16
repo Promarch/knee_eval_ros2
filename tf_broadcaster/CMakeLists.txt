@@ -17,8 +17,8 @@ include_directories("/usr/include/eigen3")
 include_directories("include/")
 
 # AddFrameSensor executable
-add_executable(AddFrameSensor src/add_frame_sensor.cpp)
-ament_target_dependencies(AddFrameSensor
+add_executable(PublishRefFrame src/PublishRefFrame.cpp)
+ament_target_dependencies(PublishRefFrame
   rclcpp
   tf2
   tf2_ros
@@ -28,8 +28,8 @@ ament_target_dependencies(AddFrameSensor
 )
 
 # AddStaticTf executable
-add_executable(AddStaticTf src/add_static_tf.cpp)
-ament_target_dependencies(AddStaticTf
+add_executable(PublishStaticTf src/PublishStaticTf.cpp)
+ament_target_dependencies(PublishStaticTf
   rclcpp
   tf2
   tf2_ros
@@ -37,30 +37,25 @@ ament_target_dependencies(AddStaticTf
 )
 
 install(TARGETS
-  AddFrameSensor
-  AddStaticTf
+  PublishRefFrame
+  PublishStaticTf
   DESTINATION lib/${PROJECT_NAME}
 )
 
-target_link_libraries(AddFrameSensor
+target_link_libraries(PublishRefFrame
   ${rclcpp_LIBRARIES}
   ${tf2_ros_LIBRARIES}
   yaml-cpp
 )
 
-target_link_libraries(AddStaticTf
+target_link_libraries(PublishStaticTf
   ${rclcpp_LIBRARIES}
   ${tf2_ros_LIBRARIES}
 )
 
-# Install the config files
+# Install the launch and config files
 install(DIRECTORY
   config
-  DESTINATION share/${PROJECT_NAME}
-)
-
-# Install the launch files
-install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}
 )

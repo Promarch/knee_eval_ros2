@@ -1,7 +1,7 @@
 #include <iostream>
-#include "tf_broadcaster/add_frame_sensor.hpp"
+#include "tf_broadcaster/PublishRefFrame.hpp"
 
-AddFrameSensor::AddFrameSensor() : Node("AddFrameSensor") {
+PublishRefFrame::PublishRefFrame() : Node("PublishRefFrame") {
     // Declare and get parameters
     this->declare_parameter("marker_file_path", "");
     marker_file_path_ = this->get_parameter("marker_file_path").as_string();
@@ -15,7 +15,7 @@ AddFrameSensor::AddFrameSensor() : Node("AddFrameSensor") {
     RCLCPP_INFO(this->get_logger(), "Finished publishing transforms from optitrack to tracker frames");
 }
 
-void AddFrameSensor::process_all_transformations(const std::string& filename) {
+void PublishRefFrame::process_all_transformations(const std::string& filename) {
     try {
         YAML::Node config = YAML::LoadFile(filename); 
         // Find all keys that end with _body to identify markers
@@ -60,7 +60,7 @@ void AddFrameSensor::process_all_transformations(const std::string& filename) {
     }
 }
 
-void AddFrameSensor::load_points_from_config(const YAML::Node& config, 
+void PublishRefFrame::load_points_from_config(const YAML::Node& config, 
                                             const std::string& marker_frame, 
                                             const std::string& target_frame,
                                             std::vector<Eigen::Vector3d>& marker_points, 
@@ -98,7 +98,7 @@ void AddFrameSensor::load_points_from_config(const YAML::Node& config,
         marker_points.size(), reference_points.size(), marker_frame.c_str(), target_frame.c_str()); 
 }
 
-void AddFrameSensor::publish_static_transform(const std::string& marker_frame, 
+void PublishRefFrame::publish_static_transform(const std::string& marker_frame, 
                                             const std::string& target_frame, 
                                             const std::vector<Eigen::Vector3d>& marker_points, 
                                             const std::vector<Eigen::Vector3d>& reference_points) {
@@ -157,7 +157,7 @@ void printEigenMatrix(const Eigen::MatrixXd &matrix, const rclcpp::Logger &logge
   }
 }
 
-void AddFrameSensor::kabsch_algorithm(
+void PublishRefFrame::kabsch_algorithm(
     const std::vector<Eigen::Vector3d>& marker_points, 
     const std::vector<Eigen::Vector3d>& reference_points,
     Eigen::Matrix3d& rotation, 
@@ -216,7 +216,7 @@ void AddFrameSensor::kabsch_algorithm(
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv); 
-    rclcpp::spin(std::make_shared<AddFrameSensor>());
+    rclcpp::spin(std::make_shared<PublishRefFrame>());
     rclcpp::shutdown();
     return 0;
 }

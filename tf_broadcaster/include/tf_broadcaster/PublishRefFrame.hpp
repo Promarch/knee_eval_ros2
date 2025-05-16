@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
-class AddFrameSensor : public rclcpp::Node {
+class PublishRefFrame : public rclcpp::Node {
 public: 
-    AddFrameSensor();
+    PublishRefFrame();
 
 private: 
 

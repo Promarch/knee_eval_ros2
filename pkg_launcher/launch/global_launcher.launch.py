@@ -30,7 +30,7 @@ def generate_launch_description():
     # Second stage: Launch add_frame_sensor after mocap_optitrack_driver_node starts
     add_frame_sensor_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(tf_broadcaster_dir, 'launch', 'add_frame_sensor.launch.py')
+            os.path.join(tf_broadcaster_dir, 'launch', 'tf_broadcaster.launch.py')
         )
     )
 

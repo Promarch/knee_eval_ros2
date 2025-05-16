@@ -1,10 +1,10 @@
-#include "tf_broadcaster/add_static_tf.hpp"
+#include "tf_broadcaster/PublishStaticTf.hpp"
 
-AddStaticTf::AddStaticTf() : Node("AddStaticTf") {
+PublishStaticTf::PublishStaticTf() : Node("PublishStaticTf") {
 
     // Declare and get parameters
-    this->declare_parameter("SensorInTibia_RPY", "");
-    this->declare_parameter("KneeInTibia_RPY", "");
+    this->declare_parameter("SensorInTibia_RPY", "0.053, -0.023, 0.076, 3.1415, 1.5708, 0");
+    this->declare_parameter("KneeInTibia_RPY", "-0.150, 0, 0.155, 0, 0, 0");
 
     // Input is a list of 6 double, of the form [x, y, z, roll, pitch, yaw]
     sensor_param_ = this->get_parameter("SensorInTibia_RPY").as_string(); 
@@ -24,7 +24,7 @@ AddStaticTf::AddStaticTf() : Node("AddStaticTf") {
 
 }
 
-std::vector<double> AddStaticTf::parse_double_array(const std::string& str) {
+std::vector<double> PublishStaticTf::parse_double_array(const std::string& str) {
     std::vector<double> result;
     std::stringstream ss(str);
     std::string item;
@@ -40,7 +40,7 @@ std::vector<double> AddStaticTf::parse_double_array(const std::string& str) {
     return result;
 }
 
-void AddStaticTf::publish_tf(const std::vector<double>& tf_RPY, 
+void PublishStaticTf::publish_tf(const std::vector<double>& tf_RPY, 
                                 const std::string& world_frame, const std::string& child_frame) {
 
     geometry_msgs::msg::TransformStamped t;
@@ -71,7 +71,7 @@ void AddStaticTf::publish_tf(const std::vector<double>& tf_RPY,
 int main(int argc, char * argv[]) 
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<AddStaticTf>());
+    rclcpp::spin(std::make_shared<PublishStaticTf>());
     rclcpp::shutdown(); 
     
     return 0;
