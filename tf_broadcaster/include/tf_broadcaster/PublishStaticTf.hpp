@@ -6,9 +6,9 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include "tf2/LinearMath/Quaternion.h"
 
-class AddStaticTf : public rclcpp::Node {
+class PublishStaticTf : public rclcpp::Node {
 public: 
-    AddStaticTf(); 
+    PublishStaticTf(); 
 
 private: 
     // Declare functions

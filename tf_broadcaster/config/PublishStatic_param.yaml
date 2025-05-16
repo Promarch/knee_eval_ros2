@@ -1,0 +1,4 @@
+PublishStaticTf:
+  ros__parameters:
+    SensorInTibia_RPY: "0.053, -0.023, 0.076, 3.1415, 1.5708, 0"
+    KneeInTibia_RPY: "-0.150, 0, 0.155, 0, 0, 0"

@@ -12,7 +12,7 @@ Streams Force-Torque data from the sensor. Adapted from the [official driver](ht
 
 ### tf_broadcaster
 
-Contains two separate notes: AddFrameSensor broadcasts the static transformation between the optitrack frame and the marker frame, while AddStaticTf broadcasts the static transformation between the frame of the sensor in relation to the tibia tracker as well as the transformation between the knee joint and the tibia tracker. 
+Contains two separate notes: PublishRefFrame broadcasts the static transformation between the optitrack frame and the marker frame, while PublishStaticTf broadcasts the static transformation between the frame of the sensor in relation to the tibia tracker as well as the transformation between the knee joint and the tibia tracker. 
 
 ### calc_force_knee
 
@@ -39,7 +39,7 @@ rosdep install -i --from-path src --rosdistro humble -y
 ```
 Build the packages
 ```bash
-colcon build --packages-select tf_broadcaster bota_ft_sensor mocap_optitrack_driver
+colcon build --symlink-install
 ```
 For ease of use, add the newly created repository to .bashrc so that you don't have to source the environment every time. Please replace "knee_eval_ws" with your chosen workspace name. 
 ```bash
