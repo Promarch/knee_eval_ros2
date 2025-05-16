@@ -1,14 +1,14 @@
-#ifndef TF_BROADCASTER_PUBLISH_STATIC_HPP_
-#define TF_BROADCASTER_PUBLISH_STATIC_HPP_
+#ifndef TF_BROADCASTER_PUBLISH_DEBUG_HPP_
+#define TF_BROADCASTER_PUBLISH_DEBUG_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include "tf2/LinearMath/Quaternion.h"
 
-class PublishStaticTf : public rclcpp::Node {
+class PublishDebug : public rclcpp::Node {
 public: 
-    PublishStaticTf(); 
+    PublishDebug(); 
 
 private: 
     // Declare functions
@@ -18,11 +18,14 @@ private:
     // Declare members
     std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 
-    std::vector<double> SensorInTibia_RPY_;
-    std::vector<double> KneeInTibia_RPY_;
+    // Imported params
+    std::string femur_distance_str_;
+    std::string tibia_distance_str_;
 
-    std::string sensor_param_; 
-    std::string knee_param_; 
+    // Store raw values
+    std::vector<double> femur_distance_; 
+    std::vector<double> tibia_distance_; 
+
 };
 
-#endif // TF_BROADCASTER_PUBLISH_STATIC_HPP_
+#endif // TF_BROADCASTER_PUBLISH_DEBUG_HPP_

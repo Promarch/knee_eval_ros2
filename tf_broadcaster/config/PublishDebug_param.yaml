@@ -1,0 +1,4 @@
+PublishDebug: 
+  ros__parameters:
+    femur_distance: "0.120134, -0.11412, 0.200558, 0.0, 0.0, 0.0"
+    tibia_distance: "-0.146034, -0.15227, 0.190532, 0.0, 0.0, 0.0"

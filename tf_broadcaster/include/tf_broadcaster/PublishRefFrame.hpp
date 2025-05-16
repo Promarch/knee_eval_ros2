@@ -1,5 +1,5 @@
-#ifndef ADD_FRAME_SENSOR_HPP_
-#define ADD_FRAME_SENSOR_HPP_
+#ifndef TF_BROADCASTER_PUBLISH_REF_HPP_
+#define TF_BROADCASTER_PUBLISH_REF_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -42,4 +42,4 @@ private:
 };
 
 
-#endif  // ADD_FRAME_SENSOR_HPP_
+#endif  // TF_BROADCASTER_PUBLISH_REF_HPP_

@@ -16,7 +16,7 @@ find_package(Eigen3 REQUIRED)
 include_directories("/usr/include/eigen3")
 include_directories("include/")
 
-# AddFrameSensor executable
+# PublishRefFrame executable
 add_executable(PublishRefFrame src/PublishRefFrame.cpp)
 ament_target_dependencies(PublishRefFrame
   rclcpp
@@ -27,9 +27,18 @@ ament_target_dependencies(PublishRefFrame
   Eigen3
 )
 
-# AddStaticTf executable
+# PublishStaticTf executable
 add_executable(PublishStaticTf src/PublishStaticTf.cpp)
 ament_target_dependencies(PublishStaticTf
+  rclcpp
+  tf2
+  tf2_ros
+  geometry_msgs
+)
+
+# PublishDebug executable
+add_executable(PublishDebug src/PublishDebug.cpp)
+ament_target_dependencies(PublishDebug
   rclcpp
   tf2
   tf2_ros
@@ -39,6 +48,7 @@ ament_target_dependencies(PublishStaticTf
 install(TARGETS
   PublishRefFrame
   PublishStaticTf
+  PublishDebug
   DESTINATION lib/${PROJECT_NAME}
 )
 
