@@ -34,9 +34,9 @@ def generate_launch_description():
         )
     )
 
-    # Wait 3 seconds to ensure optitrack node is up and running
+    # Wait 1 second to ensure optitrack node is up and running
     add_frame_timer = TimerAction(
-        period=3.0,
+        period=1.0,
         actions=[add_frame_sensor_launch]
     )
 
@@ -55,12 +55,12 @@ def generate_launch_description():
     )
 
     calc_force_timer = TimerAction(
-        period=5.0,  # 5 second delay to ensure previous nodes are ready
+        period=2.0,  # 2 second delay to ensure previous nodes are ready
         actions=[calc_force_knee_launch]
     )
 
     csv_timer = TimerAction(
-        period=5.5,  # 3.5 second delay to ensure previous nodes are ready
+        period=2.5,  # 2.5 second delay to ensure previous nodes are ready
         actions=[csv_writer_launch]
     )
 

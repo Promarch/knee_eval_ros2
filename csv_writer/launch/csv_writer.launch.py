@@ -2,15 +2,13 @@ import os
 from ament_index_python.packages import get_package_share_directory
 import launch
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, RegisterEventHandler, LogInfo, EmitEvent)
-from launch.substitutions import LaunchConfiguration
+from launch.actions import RegisterEventHandler, LogInfo, EmitEvent
 from launch_ros.actions import LifecycleNode
-from launch.conditions import IfCondition  # Added this import for conditions
-from launch.event_handlers import OnProcessStart, OnProcessExit
+from launch.event_handlers import OnProcessStart
 
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
-from lifecycle_msgs.msg import Transition, State
+from lifecycle_msgs.msg import Transition
 
 def generate_launch_description(): 
     # Declare filepath to parameters
@@ -25,22 +23,6 @@ def generate_launch_description():
         namespace="",
         output = "screen", 
         parameters = [params_path]
-    )
-
-    # Register event handler to automatically configure the node when it starts
-    configure_event_handler = RegisterEventHandler(
-        event_handler=OnProcessStart(
-            target_action=csv_writer_node,
-            on_start=[
-                LogInfo(msg="Configuring CsvWriterLifecycle node..."),
-                EmitEvent(
-                    event=ChangeState(
-                        lifecycle_node_matcher=lambda node: node.name == 'CsvWriter',
-                        transition_id=Transition.TRANSITION_CONFIGURE
-                    )
-                )
-            ]
-        )
     )
 
     CsvWriter_trans_event_configure = RegisterEventHandler(OnProcessStart(
@@ -71,22 +53,6 @@ def generate_launch_description():
         )
     )
 
-    # Register event handler for graceful shutdown (deactivate and cleanup)
-    # deactivate_event_handler = RegisterEventHandler(
-    #     event_handler=OnProcessExit(
-    #         target_action=csv_writer_node,
-    #         on_exit=[
-    #             LogInfo(msg="Shutting down CsvWriterLifecycle node..."),
-    #             EmitEvent(
-    #                 event=ChangeState(
-    #                     lifecycle_node_matcher=launch.events.matches_action(csv_writer_node),
-    #                     transition_id=Transition.TRANSITION_DEACTIVATE
-    #                 )
-    #             )
-    #         ]
-    #     )
-    # )
-
     # Create the launch description
     ld = LaunchDescription()
     
@@ -94,6 +60,5 @@ def generate_launch_description():
     ld.add_action(csv_writer_node)
     ld.add_action(CsvWriter_trans_event_configure)
     ld.add_action(CsvWriter_trans_event_activate)
-    # ld.add_action(deactivate_event_handler)
 
     return ld
