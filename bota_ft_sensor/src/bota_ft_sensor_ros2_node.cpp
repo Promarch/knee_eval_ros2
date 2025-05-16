@@ -26,14 +26,14 @@ public:
   {
     // Declare parameters
     this->declare_parameter("serial_port", "/dev/ttyUSB0");
-    this->declare_parameter("frame_id", "ft_sensor_link");
+    this->declare_parameter("frame_name", "ft_sensor_link");
     this->declare_parameter("publish_intervall", 10);  // ms
     this->declare_parameter("zero_samples", 100);
     this->declare_parameter("zero_timeout_ms", 5000);
 
     // Get parameters
     serial_port_name_ = this->get_parameter("serial_port").as_string();
-    frame_id_ = this->get_parameter("frame_id").as_string();
+    frame_name_ = this->get_parameter("frame_name").as_string();
     publish_intervall_ = this->get_parameter("publish_intervall").as_int();
     zero_samples_ = this->get_parameter("zero_samples").as_int();
     zero_timeout_ms_ = this->get_parameter("zero_timeout_ms").as_int(); 
@@ -81,7 +81,7 @@ private:
 
   // Declare Member variables
   std::string serial_port_name_;
-  std::string frame_id_;
+  std::string frame_name_;
   int publish_intervall_; 
   int serial_port_ = -1;
   // Declare publisher
@@ -296,7 +296,7 @@ private:
     
     // Set up the WrenchStamped message
     wrench_stamped_msg->header.stamp = this->now();
-    wrench_stamped_msg->header.frame_id = frame_id_;
+    wrench_stamped_msg->header.frame_id = frame_name_;
     wrench_stamped_msg->wrench = *wrench_msg;
     
     // Publish the messages
