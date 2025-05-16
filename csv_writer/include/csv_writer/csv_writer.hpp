@@ -4,18 +4,30 @@
 #include <fstream>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "std_srvs/srv/trigger.hpp"
 
-class CsvWriter : public rclcpp::Node {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn; 
+
+class CsvWriter : public rclcpp_lifecycle::LifecycleNode {
 public: 
-    CsvWriter(); 
+    CsvWriter(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());  
     ~CsvWriter(); 
 
 private: 
+    // Lifecycle state transition callbacks
+    CallbackReturn on_configure(const rclcpp_lifecycle::State& state);
+    CallbackReturn on_activate(const rclcpp_lifecycle::State& state);
+    CallbackReturn on_deactivate(const rclcpp_lifecycle::State& state);
+    CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state); 
+    CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state); 
+    CallbackReturn on_error(const rclcpp_lifecycle::State& state); 
+    
     // Declare functions
     void ForceCallback(const std::shared_ptr<geometry_msgs::msg::WrenchStamped> msg);
     void TimerCallback(); 
@@ -39,6 +51,7 @@ private:
 
     std::ofstream csv_file_; 
     bool is_recording_; 
+    bool transforms_available_;
 
     // Service servers
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_recording_service_; 
